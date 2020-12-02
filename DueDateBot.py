@@ -47,7 +47,6 @@ async def day(ctx):
     start_of_day = datetime(now.year, now.month, now.day)
     end_of_day = start_of_day + timedelta(days=1)
     active = get_events_by_date(service, calendar_id, start_of_day, end_of_day)
-
     active.sort()
 
     embed = discord.Embed(title='Due today', colour=discord.Colour.red())
@@ -75,6 +74,7 @@ async def week(ctx):
 
     await ctx.send(embed=embed)
 
+
 @bot.command()
 async def month(ctx):
     service = CalendarSetup.get_calendar_service()
@@ -92,8 +92,6 @@ async def month(ctx):
 
     await ctx.send(embed=embed)
 
-
-# create command
 @bot.command()
 async def create(ctx, *, msg):
     service = CalendarSetup.get_calendar_service()
@@ -111,11 +109,11 @@ async def create(ctx, *, msg):
         'summary': title,
         'start': {
             'dateTime': date,
-            'timeZone': 'Canada/Pacific',
+            'timeZone': timezone,
         },
         'end': {
             'dateTime': date,
-            'timeZone': 'Canada/Pacific',
+            'timeZone': timezone,
         },
     }
 
@@ -160,7 +158,7 @@ async def update(ctx, *, msg):
 
 @bot.event
 async def on_command_error(ctx, error):
-    await ctx.send(f'{error}\nTry !help')
+    await ctx.send(f'{error}\n\nTry !help')
 
 # We delete default help command
 bot.remove_command('help')
@@ -193,9 +191,6 @@ async def help(ctx):
                             Ex)!week ''', inline=False)
     embed.add_field(
         name='!month', value='''Return all events this month.
-                            Ex)!month ''', inline=False)
-    embed.add_field(
-        name='!all', value='''Return all events include those in the past.
                             Ex)!month ''', inline=False)
 
     await ctx.send(embed=embed)
