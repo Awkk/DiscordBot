@@ -93,6 +93,27 @@ async def create(ctx, *, msg):
     await ctx.send('Event created: %s' % (event.get('htmlLink')))
 
 
+@bot.command()
+async def delete(ctx, *, msg):
+    service = CalendarSetup.get_calendar_service()
+    calendar_id = get_calendar_id(service)
+    page_token = None
+    while True:
+        events = service.events().list(calendarId=calendar_id,
+                                       pageToken=page_token).execute()
+        for event in events['items']:
+            if(event['summary'] == msg):
+                service.events().delete(calendarId=calendar_id,
+                                        eventId=event['id']).execute()
+                await ctx.send('Deleted ' + msg)
+                return
+
+        page_token = events.get('nextPageToken')
+        if not page_token:
+            break
+    await ctx.send(msg + ' not found')
+
+
 @bot.event
 async def on_command_error(ctx, error):
     await ctx.send(f'{error}\nTry !help')
