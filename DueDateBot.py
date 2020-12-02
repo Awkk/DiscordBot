@@ -2,6 +2,11 @@ import discord
 import CalendarSetup
 import dateparser
 import json
+import random
+import asyncio
+import aiohttp
+import requests
+
 from discord.ext import commands
 from dateutil.parser import parse as dtparse
 from datetime import datetime
