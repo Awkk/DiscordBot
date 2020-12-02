@@ -175,16 +175,16 @@ async def help(ctx):
     embed.add_field(
         name='!ping', value='Returns bot response time in milliseconds', inline=False)
     embed.add_field(
-        name='!create', value='''Creates an event in Google Calendar. 
+        name='!create', value='''Creates an event in Google Calendar.
                             Ex) !create eventname, YYYY MMM 3 10:00pm, ''', inline=False)
     embed.add_field(
-        name='!delete', value='''Deletes an event in Google Calendar. 
+        name='!delete', value='''Deletes an event in Google Calendar.
                             Ex) !delete id''', inline=False)
     embed.add_field(
         name='!update', value='''Updates an event to a different time/date.
                             Ex)!update id ''', inline=False)
     embed.add_field(
-        name='!day', value='''Returns all events today. 
+        name='!day', value='''Returns all events today.
                             Ex)!day ''', inline=False)
     embed.add_field(
         name='!week', value='''Return all events this week.
@@ -240,6 +240,68 @@ def get_events_by_date(service, calendar_id, start_date, end_date):
             break
 
     return found
+
+
+@bot.command()
+async def launch(ctx):
+    await ctx.send('Nuclear Bomb Has Launched!')
+    await ctx.send('https://imgur.com/vz7Fu1m')
+    await ctx.send('https://imgur.com/VyCuDYd')
+
+
+@bot.command(aliases=['askme','test1'])
+async def _askme(ctx, *, q):
+    respond = ["It is certain.",
+                "It is decidedly so.",
+                "Without a doubt.",
+                "Yes - definitely.",
+                "You may rely on it.",
+                "As I see it, yes.",
+                "Most likely.",
+                "Outlook good.",
+                "Yes.",
+                "Signs point to yes.",
+                "Reply hazy, try again.",
+                "Ask again later.",
+                "Better not tell you now.",
+                "Cannot predict now.",
+                "Concentrate and ask again.",
+                "Don't count on it.",
+                "My reply is no.",
+                "My sources say no.",
+                "Outlook not so good.",
+                "Very doubtful."
+                ]
+    await ctx.send(f'Question:{q}\nAnswer: {random.choice(respond)}')
+
+@bot.command()
+async def bitcoin(ctx):
+    url = 'https://api.coindesk.com/v1/bpi/currentprice/BTC.json'
+    async with aiohttp.ClientSession() as session:  # Async HTTP request
+        raw_response = await session.get(url)
+        response = await raw_response.text()
+        response = json.loads(response)
+        await ctx.send("Bitcoin price is: $" + response['bpi']['USD']['rate'])
+
+
+@bot.command()
+async def msgday(ctx):
+    responds = ["You’re off to great places, today is your day. Your mountain is waiting, so get on your way.",
+                "You always pass failure on the way to success.",
+                "No one is perfect - that’s why pencils have erasers.",
+                "Winning doesn’t always mean being first. Winning means you’re doing better than you’vedone before.",
+                "You’re braver than you believe, and stronger than you seem, and smarter than you think.",
+                "It always seems impossible until it is done.",
+                "Keep your face to the sunshine and you cannot see a shadow.",
+                "Once you replace negative thoughts with positive ones, you’ll start having positive results.",
+                "Positive thinking will let you do everything better than negative thinking will.",
+                "In every day, there are 1,440 minutes. That means we have 1,440 daily opportunities to make a positive impact.",
+                "The only time you fail is when you fall down and stay down.",
+                "Virtually nothing is impossible in this world if you just put your mind to it and maintain a positive attitude.",
+                "Optimism is a happiness magnet. If you stay positive good things and good people will be drawn to you.",
+                "It makes a big difference in your life when you stay positive."
+                ]
+    await ctx.send(f'Message of the day\n" {random.choice(responds)}"')
 
 
 print("Bot is ready!")
