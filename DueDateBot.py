@@ -1,10 +1,12 @@
 import discord
 import CalendarSetup
-import datetime
 import dateparser
 import json
 from discord.ext import commands
 from dateutil.parser import parse as dtparse
+from datetime import datetime
+from datetime import timedelta
+
 print('Starting bot...')
 
 TOKEN = open('BotToken.txt', 'r').readline()
@@ -36,31 +38,21 @@ async def link(ctx):
         await ctx.send('Due Dates calendar found')
 
 
-# list command
 @bot.command()
-async def list(ctx):
+async def day(ctx):
     service = CalendarSetup.get_calendar_service()
     calendar_id = get_calendar_id(service)
-    page_token = None
-    current_date = datetime.datetime.now()
-    active = []
-    while True:
-        events = service.events().list(calendarId=calendar_id,
-                                       pageToken=page_token).execute()
-        for event in events['items']:
-            due_date = dtparse(event['start']['dateTime']).replace(tzinfo=None)
-            if(due_date > current_date):
-                active.append((due_date, event['summary']))
-
-        page_token = events.get('nextPageToken')
-        if not page_token:
-            break
+    now = datetime.now()
+    start_of_day = datetime(now.year, now.month, now.day)
+    end_of_day = start_of_day + timedelta(days=1)
+    active = get_events_by_date(service, calendar_id, start_of_day, end_of_day)
 
     active.sort()
-    embed = discord.Embed(title='All Due Dates', colour=discord.Colour.red())
+
+    embed = discord.Embed(title='Due today', colour=discord.Colour.red())
     for event in active:
         embed.add_field(name=event[1], value=event[0].strftime(
-            '%d-%b-%y %a %I:%M%p'), inline=False)
+            '%I:%M %p'), inline=False)
 
     await ctx.send(embed=embed)
 
@@ -76,7 +68,8 @@ async def create(ctx, *, msg):
 
     info = msg.split(',', 1)
     title = info[0]
-    date = dateparser.parse(info[1]).isoformat('T')
+    original_date = dateparser.parse(info[1])
+    date = original_date.isoformat('T')
 
     event = {
         'summary': title,
@@ -91,7 +84,7 @@ async def create(ctx, *, msg):
     }
 
     event = service.events().insert(calendarId=calendar_id, body=event).execute()
-    await ctx.send('Event created: %s' % (event.get('htmlLink')))
+    await ctx.send('{} created at {}'.format(title, original_date))
 
 
 @bot.command()
@@ -123,7 +116,7 @@ async def update(ctx, *, msg):
         event['end']['dateTime'] = date
         updated_event = service.events().update(
             calendarId=calendar_id, eventId=event_id, body=event).execute()
-        original_date = original_date.strftime('%d-%b-%y %a %I:%M%p')
+        original_date = original_date.strftime('%d-%b-%y %a %I:%M %p')
         await ctx.send('Updated {} to {}'.format(title, original_date))
     else:
         await ctx.send('{} not found'.format(title))
@@ -165,6 +158,9 @@ async def help(ctx):
     embed.add_field(
         name='!month', value='''Return all events this month.
                             Ex)!month ''', inline=False)
+    embed.add_field(
+        name='!all', value='''Return all events include those in the past.
+                            Ex)!month ''', inline=False)
 
     await ctx.send(embed=embed)
 
@@ -196,6 +192,23 @@ def get_event_id(service, calendar_id, name):
         if not page_token:
             break
     return None
+
+
+def get_events_by_date(service, calendar_id, start_date, end_date):
+    page_token = None
+    found = []
+    while True:
+        events = service.events().list(calendarId=calendar_id,
+                                       pageToken=page_token).execute()
+        for event in events['items']:
+            due_date = dtparse(event['start']['dateTime']).replace(tzinfo=None)
+            if(start_date < due_date < end_date):
+                found.append((due_date, event['summary']))
+        page_token = events.get('nextPageToken')
+        if not page_token:
+            break
+
+    return found
 
 
 print("Bot is ready!")
