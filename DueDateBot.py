@@ -6,6 +6,7 @@ from discord.ext import commands
 from dateutil.parser import parse as dtparse
 from datetime import datetime
 from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 print('Starting bot...')
 
@@ -65,10 +66,26 @@ async def week(ctx):
     start_of_day = datetime(now.year, now.month, now.day)
     end_of_day = start_of_day + timedelta(weeks=1)
     active = get_events_by_date(service, calendar_id, start_of_day, end_of_day)
-
     active.sort()
 
     embed = discord.Embed(title='Due this week', colour=discord.Colour.red())
+    for event in active:
+        embed.add_field(name=event[1], value=event[0].strftime(
+            '%d-%b %a %I:%M %p'), inline=False)
+
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def month(ctx):
+    service = CalendarSetup.get_calendar_service()
+    calendar_id = get_calendar_id(service)
+    now = datetime.now()
+    start_of_day = datetime(now.year, now.month, now.day)
+    end_of_day = start_of_day + relativedelta(months=+1)
+    active = get_events_by_date(service, calendar_id, start_of_day, end_of_day)
+    active.sort()
+
+    embed = discord.Embed(title='Due this month', colour=discord.Colour.red())
     for event in active:
         embed.add_field(name=event[1], value=event[0].strftime(
             '%d-%b %a %I:%M %p'), inline=False)
