@@ -1,5 +1,8 @@
 import discord
 import CalendarSetup
+import datetime
+import dateparser
+import json
 from discord.ext import commands
 print('Starting bot...')
 
@@ -19,9 +22,11 @@ async def link(ctx):
     await ctx.send('Account linked')
     calendar_id = get_calendar_id(service)
     if(calendar_id == None):
+        with open('setting.json') as f:
+            timezone = json.load(f)['timezone']
         calendar = {
             'summary': 'Due Dates',
-            'timeZone': 'Canada/Pacific'
+            'timeZone': timezone
         }
         created_calendar = service.calendars().insert(body=calendar).execute()
         calendarId = created_calendar['id']
@@ -33,27 +38,39 @@ async def link(ctx):
 @bot.command()
 async def list(ctx):
     service = CalendarSetup.get_calendar_service()
+    calendar_id = get_calendar_id(service)
+    page_token = None
+    while True:
+        events = service.events().list(calendarId=calendar_id,
+                                       pageToken=page_token).execute()
+        for event in events['items']:
+            print(event['summary'])
+        page_token = events.get('nextPageToken')
+        if not page_token:
+            break
 
 
 @bot.command()
-async def create(ctx, msg):
+async def create(ctx, *, msg):
     service = CalendarSetup.get_calendar_service()
     calendar_id = get_calendar_id(service)
-
     calendar = service.calendars().get(calendarId=calendar_id).execute()
+    with open('setting.json') as f:
+        timezone = json.load(f)['timezone']
 
-    print(calendar['summary'])
+    info = msg.split(',')
+    title = info[0]
+    date = dateparser.parse(info[1]).isoformat('T')
+
     event = {
-        'summary': 'Google I/O 2015',
-        'location': '800 Howard St., San Francisco, CA 94103',
-        'description': 'A chance to hear more about Google\'s developer products.',
+        'summary': title,
         'start': {
-            'dateTime': '2020-12-02T09:00:00-07:00',
-            'timeZone': 'America/Los_Angeles',
+            'dateTime': date,
+            'timeZone': 'Canada/Pacific',
         },
         'end': {
-            'dateTime': '2020-12-02T17:00:00-07:00',
-            'timeZone': 'America/Los_Angeles',
+            'dateTime': date,
+            'timeZone': 'Canada/Pacific',
         },
     }
 
