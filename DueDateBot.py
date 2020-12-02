@@ -34,7 +34,7 @@ async def link(ctx):
     else:
         await ctx.send('Due Dates calendar found')
 
-
+#list command
 @bot.command()
 async def list(ctx):
     service = CalendarSetup.get_calendar_service()
@@ -50,6 +50,7 @@ async def list(ctx):
             break
 
 
+#create command
 @bot.command()
 async def create(ctx, *, msg):
     service = CalendarSetup.get_calendar_service()
@@ -95,7 +96,26 @@ async def help(ctx):
         name='!link', value='''Authorize the bot to access your google calendar.
                             All event created will be on a calendar called "Due Dates"''', inline=False)
     embed.add_field(
-        name='!ping', value='Returns bot respond time in milliseconds', inline=False)
+        name='!ping', value='Returns bot response time in milliseconds', inline=False)
+    embed.add_field(
+        name='!create', value='''Creates an event in Google Calendar. 
+                            Ex) !create eventname, YYYY MMM 3 10:00pm, ''', inline=False)
+    embed.add_field(
+        name='!delete', value='''Deletes an event in Google Calendar. 
+                            Ex) !delete id''', inline=False)
+    embed.add_field(
+        name='!update', value='''Updates an event to a different time/date.
+                            Ex)!update id ''', inline=False)
+    embed.add_field(
+        name='!day', value='''Returns all events today. 
+                            Ex)!day ''', inline=False)
+    embed.add_field(
+        name='!week', value='''Return all events this week.
+                            Ex)!week ''', inline=False)
+    embed.add_field(
+        name='!month', value='''Return all events this month.
+                            Ex)!month ''', inline=False)
+
     await ctx.send(embed=embed)
 
 
@@ -111,7 +131,6 @@ def get_calendar_id(service):
         if not page_token:
             break
     return None
-
 
 print("Bot is ready!")
 bot.run(TOKEN)
