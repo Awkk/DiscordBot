@@ -4,6 +4,7 @@ import datetime
 import dateparser
 import json
 from discord.ext import commands
+from dateutil.parser import parse as dtparse
 print('Starting bot...')
 
 TOKEN = open('BotToken.txt', 'r').readline()
@@ -34,22 +35,33 @@ async def link(ctx):
     else:
         await ctx.send('Due Dates calendar found')
 
+
 # list command
-
-
 @bot.command()
 async def list(ctx):
     service = CalendarSetup.get_calendar_service()
     calendar_id = get_calendar_id(service)
     page_token = None
+    current_date = datetime.datetime.now()
+    active = []
     while True:
         events = service.events().list(calendarId=calendar_id,
                                        pageToken=page_token).execute()
         for event in events['items']:
-            print(event['summary'])
+            due_date = dtparse(event['start']['dateTime']).replace(tzinfo=None)
+            if(due_date > current_date):
+                active.append((due_date, event['summary']))
+
         page_token = events.get('nextPageToken')
         if not page_token:
             break
+
+    active.sort()
+    embed = discord.Embed(title='All Due Dates', colour=discord.Colour.red())
+    for event in active:
+        embed.add_field(name=event[1], value=event[0], inline=False)
+
+    await ctx.send(embed=embed)
 
 
 # create command
