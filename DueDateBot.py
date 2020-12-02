@@ -34,7 +34,9 @@ async def link(ctx):
     else:
         await ctx.send('Due Dates calendar found')
 
-#list command
+# list command
+
+
 @bot.command()
 async def list(ctx):
     service = CalendarSetup.get_calendar_service()
@@ -50,7 +52,7 @@ async def list(ctx):
             break
 
 
-#create command
+# create command
 @bot.command()
 async def create(ctx, *, msg):
     service = CalendarSetup.get_calendar_service()
@@ -59,7 +61,7 @@ async def create(ctx, *, msg):
     with open('setting.json') as f:
         timezone = json.load(f)['timezone']
 
-    info = msg.split(',')
+    info = msg.split(',', 1)
     title = info[0]
     date = dateparser.parse(info[1]).isoformat('T')
 
@@ -131,6 +133,7 @@ def get_calendar_id(service):
         if not page_token:
             break
     return None
+
 
 print("Bot is ready!")
 bot.run(TOKEN)
