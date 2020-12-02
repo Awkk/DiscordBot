@@ -59,7 +59,8 @@ async def list(ctx):
     active.sort()
     embed = discord.Embed(title='All Due Dates', colour=discord.Colour.red())
     for event in active:
-        embed.add_field(name=event[1], value=event[0].strftime('%d-%b-%y %a %I:%M%p'), inline=False)
+        embed.add_field(name=event[1], value=event[0].strftime(
+            '%d-%b-%y %a %I:%M%p'), inline=False)
 
     await ctx.send(embed=embed)
 
@@ -97,21 +98,35 @@ async def create(ctx, *, msg):
 async def delete(ctx, *, msg):
     service = CalendarSetup.get_calendar_service()
     calendar_id = get_calendar_id(service)
-    page_token = None
-    while True:
-        events = service.events().list(calendarId=calendar_id,
-                                       pageToken=page_token).execute()
-        for event in events['items']:
-            if(event['summary'] == msg):
-                service.events().delete(calendarId=calendar_id,
-                                        eventId=event['id']).execute()
-                await ctx.send('Deleted ' + msg)
-                return
+    event_id = get_event_id(service, calendar_id, msg)
+    if(event_id != None):
+        service.events().delete(calendarId=calendar_id,
+                                eventId=event_id).execute()
+        await ctx.send('Deleted ' + msg)
+    else:
+        await ctx.send(msg + ' not found')
 
-        page_token = events.get('nextPageToken')
-        if not page_token:
-            break
-    await ctx.send(msg + ' not found')
+
+@bot.command()
+async def update(ctx, *, msg):
+    service = CalendarSetup.get_calendar_service()
+    calendar_id = get_calendar_id(service)
+    info = msg.split(',', 1)
+    title = info[0]
+    event_id = get_event_id(service, calendar_id, title)
+    original_date = dateparser.parse(info[1])
+    date = original_date.isoformat('T')
+
+    if(event_id != None):
+        event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+        event['start']['dateTime'] = date
+        event['end']['dateTime'] = date
+        updated_event = service.events().update(
+            calendarId=calendar_id, eventId=event_id, body=event).execute()
+        original_date = original_date.strftime('%d-%b-%y %a %I:%M%p')
+        await ctx.send('Updated {} to {}'.format(title, original_date))
+    else:
+        await ctx.send('{} not found'.format(title))
 
 
 @bot.event
@@ -163,6 +178,21 @@ def get_calendar_id(service):
             if(calendar_list_entry['summary'] == 'Due Dates'):
                 return calendar_list_entry['id']
         page_token = calendar_list.get('nextPageToken')
+        if not page_token:
+            break
+    return None
+
+
+def get_event_id(service, calendar_id, name):
+    page_token = None
+    while True:
+        events = service.events().list(calendarId=calendar_id,
+                                       pageToken=page_token).execute()
+        for event in events['items']:
+            if(event['summary'] == name):
+                return event['id']
+
+        page_token = events.get('nextPageToken')
         if not page_token:
             break
     return None
