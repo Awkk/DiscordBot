@@ -1,0 +1,92 @@
+
+#find events on date
+@bot.command()
+async def date(timeMin):
+    """Find events on the Date
+        Eg. !date 2017-03-23"""
+
+    # Check if date entered is correct
+    if isValidDate(timeMin) is False:
+        await print(":fearful: `Please enter the Date in the correct format!`\n"
+                      "Format Example : `YYYY-MM-DD` \n "
+                      "**Eg. 2017-04-13**")
+    else:
+        dateMin = arrow.get(timeMin)
+        dateMax = dateMin.replace(hour=23, minutes=59, seconds=59)
+        await print(dateMin, dateMax)
+        await showList(dateMax, dateMin)
+
+def isValidDate(datestring):
+    """Verify the format of the date string is correct"""
+    try:
+        datetime.datetime.strptime(datestring, '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
+
+#day, week, month list command
+@bot.command()
+async def day(ctx):
+    await showList(nextDay())
+
+@bot.command()
+async def week(ctx):
+    await showList(nextDay(7))
+
+@bot.command()
+async def month(ctx):
+    await showList(nextDay(28))
+
+def nextDay(d=1):
+    """Return the day + days"""
+    utc = arrow.utcnow()
+    return arrow.utcnow().to("US/Pacific").replace(day=d, hours=23, minutes=59, seconds=59)
+
+#for specific date
+async def showList(ctx, dateMax, dateMin = False):
+    if dateMin is False:
+        date_min = arrow.utcnow() # retrieve the date
+
+    service = CalendarSetup.get_calendar_service()
+    calendar_id = get_calendar_id(service)
+
+
+    page_token = None
+    active = []
+    while True:
+        events = service.events().list(calendarId=calendar_id,
+                                       pageToken=page_token, dateMin = date_min, dateMax = date_max).execute()
+        embed = discord.Embed(title='Events', colour=discord.Colour.red())
+        for event in events['items']:
+            await success(event)
+        page_token = events.get('nextPageToken')
+        if not page_token:
+            break
+
+    await ctx.send(embed=embed)
+
+#date success, searchup event
+async def success(event):
+    emoji = ":date:"
+    dateArr = refactorDate(event)
+    date = ' '.join(dateArr)
+    summary = event['summary']
+    id = event['id']
+    await ctx.send("{} *{}*  \t :id: `{}` \n"
+                  "```-> {}\n```".format(emoji, date, id, summary))
+
+def refactorDate(event):
+    """Function which returns us the date according to format dd-mm-yyyy"""
+
+    dateArr = None
+    if "date" in event['end']: 
+        '''The format event['end'][date] returns the format yyyyy-mm-dd'''
+        dateArr = arrow.get(event['start']['date']).format("DD-MM-YYYY")
+        dateArr += " All Day"
+    else:
+        '''The format event['end']['dateTime] returns the format yyyy-mm-ddTHH-MM-S'''
+        timeMax = arrow.get(event['end']['dateTime']).format("HH:mm")
+        timeMin = arrow.get(event['start']['dateTime']).format("DD-MM-YYYY | HH:mm")
+        dateArr = " ".join((timeMin, " to ", timeMax))
+
+    return dateArr
