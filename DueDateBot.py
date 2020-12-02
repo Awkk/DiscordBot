@@ -59,7 +59,7 @@ async def list(ctx):
     active.sort()
     embed = discord.Embed(title='All Due Dates', colour=discord.Colour.red())
     for event in active:
-        embed.add_field(name=event[1], value=event[0], inline=False)
+        embed.add_field(name=event[1], value=event[0].strftime('%d-%b-%y %a %I:%M%p'), inline=False)
 
     await ctx.send(embed=embed)
 
